@@ -94,7 +94,47 @@ local function update_launch_products(launch_products, force_index, to_value)
   end
 end
 
-function database.handle_research_updated(technology, to_value)
+function database.update_research_ingredients_missing(obj_ident, obj_data, force_index)
+  obj_data.research_ingredients_missing = obj_data.research_ingredients_missing or {}
+
+  if obj_data.enabled_at_start or (obj_data.researched_forces and obj_data.researched_forces[force_index]) then
+    -- no research required, or research completed
+    obj_data.research_ingredients_missing[force_index] = 0
+    return
+  end
+
+  -- Find the fewest un-researched research ingredients
+  -- among all techs that unlock this object
+  -- (if this object is a tech, look at its own research ingredients)
+  local smallest_ingredients_missing = 9999
+  for _, technology_ident in pairs(obj_ident.class == "technology" and { obj_ident } or obj_data.unlocked_by) do
+    local ingredients_missing = 0
+    local technology_data = database.technology[technology_ident.name]
+    local technology_prototype = global.prototypes.technology[technology_ident.name]
+    for _, ingredient in pairs(technology_prototype.research_unit_ingredients) do
+      ingredient_data = database[ingredient.type][ingredient.name]
+      if ingredient_data.enabled_at_start then
+        -- enabled at start, not missing
+      elseif ingredient_data.researched_forces and ingredient_data.researched_forces[force_index] then
+        -- researched, not missing
+      else
+        ingredients_missing = ingredients_missing + 1
+      end
+    end
+
+    if ingredients_missing < smallest_ingredients_missing then
+      smallest_ingredients_missing = ingredients_missing
+      if smallest_ingredients_missing == 0 then
+        -- can't do better than this, stop looking
+        break
+      end
+    end
+  end
+
+  obj_data.research_ingredients_missing[force_index] = smallest_ingredients_missing
+end
+
+function database.handle_research_updated(technology, to_value, skip_research_ingredients_missing)
   local force_index = technology.force.index
   -- Technology
   local technology_data = database.technology[technology.name]
@@ -104,6 +144,7 @@ function database.handle_research_updated(technology, to_value)
   end
   technology_data.researched_forces[force_index] = to_value
 
+  -- Unlock objects
   for _, objects in pairs({
     technology_data.unlocks_equipment,
     technology_data.unlocks_fluids,
@@ -139,15 +180,77 @@ function database.handle_research_updated(technology, to_value)
       end
     end
   end
+
+  if not skip_research_ingredients_missing then
+    -- If this tech contributes research ingredients to any other techs,
+    -- update research_ingredients_missing for those other techs and their unlocks.
+    for _, other_tech_ident in pairs(technology_data.contributes_research_ingredients_to) do
+      local other_tech_data = database.technology[other_tech_ident.name]
+      for _, objects in pairs({
+        { other_tech_ident },
+        other_tech_data.unlocks_equipment,
+        other_tech_data.unlocks_fluids,
+        other_tech_data.unlocks_items,
+        other_tech_data.unlocks_entities,
+        other_tech_data.unlocks_recipes,
+      }) do
+        for _, obj_ident in ipairs(objects) do
+          local obj_data = database[obj_ident.class][obj_ident.name]
+          database.update_research_ingredients_missing(obj_ident, obj_data, force_index)
+        end
+      end
+    end
+  end
+end
+
+function get_science_sorting_number(obj_data)
+  return (obj_data.science_packs and #obj_data.science_packs or 9999)
+end
+
+function science_comparator(lhs_ident, rhs_ident)
+  local lhs_data = database[lhs_ident.class][lhs_ident.name]
+  local rhs_data = database[rhs_ident.class][rhs_ident.name]
+
+  -- sort by science packs
+  local lhs_sci = get_science_sorting_number(lhs_data)
+  local rhs_sci = get_science_sorting_number(rhs_data)
+  if lhs_sci ~= rhs_sci then
+    return lhs_sci < rhs_sci
+  end
+
+  -- same science packs, sort by name
+  return lhs_ident.name < rhs_ident.name
 end
 
 function database.check_force(force)
   if not force.valid then
     return
   end
+
   for _, technology in pairs(force.technologies) do
     if technology.enabled and technology.researched then
-      database.handle_research_updated(technology, true)
+      database.handle_research_updated(technology, true, true)
+    end
+  end
+
+  -- Initialize research_ingredients_missing for all technologies
+  -- and all objects that can be unlocked by technologies.
+  -- Do this after updating research to improve performance.
+  for _, class in ipairs({ "technology", "entity", "equipment", "fluid", "item", "recipe" }) do
+    for name, obj_data in pairs(database[class]) do
+      database.update_research_ingredients_missing({ class = class, name = name }, obj_data, force.index)
+    end
+  end
+
+  -- Sort ingredient_in and product_of lists
+  -- Simpler tech comes first.
+  for _, class in ipairs({ "item", "fluid" }) do
+    for name, obj_data in pairs(database[class]) do
+      for _, field in ipairs({ "ingredient_in", "product_of" }) do
+        if obj_data[field] then
+          table.sort(obj_data[field], science_comparator)
+        end
+      end
     end
   end
 end

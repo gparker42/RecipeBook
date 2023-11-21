@@ -65,7 +65,7 @@ function Gui:update_contents()
   local label = refs.label
   label.caption = recipe_info.caption
   label.tooltip = recipe_info.tooltip
-  label.style = recipe_info.researched and "rb_toolbar_label" or "rb_unresearched_toolbar_label"
+  label.style = "rb_toolbar_label" .. formatter.research_color_suffix(recipe_info)
 
   -- Slot boxes
   for _, source in ipairs({ "ingredients", "products", "made_in" }) do

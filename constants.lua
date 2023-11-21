@@ -119,8 +119,16 @@ constants.colors = {
     tbl = { 255, 240, 69 },
   },
   unresearched = {
-    str = "255, 142, 142",
-    tbl = { 255, 142, 142 },
+    str = "255, 122, 122",
+    tbl = { 255, 122, 122 },
+  },
+  missing_1_research_ingredients = {
+    str = "255, 152, 102",
+    tbl = { 255, 152, 102 },
+  },
+  missing_0_research_ingredients = {
+    str = "255, 182, 102",
+    tbl = { 255, 182, 102 },
   },
 }
 

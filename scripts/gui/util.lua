@@ -88,7 +88,7 @@ function gui_util.update_list_box(pane, source_tbl, player_data, iterator, optio
     local info = formatter(obj_data, player_data, options)
     if info then
       i = i + 1
-      local style = info.researched and "rb_list_box_item" or "rb_unresearched_list_box_item"
+      local style = "rb_list_box_item" .. formatter.research_color_suffix(info)
       local item = children[i]
       if item then
         item.style = style

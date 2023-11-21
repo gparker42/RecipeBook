@@ -20,11 +20,25 @@ styles.rb_last_selected_list_box_item = {
   disabled_font_color = constants.colors.yellow.tbl,
 }
 
-styles.rb_unresearched_list_box_item = {
+styles.rb_list_box_item_unresearched = {
   type = "button_style",
   parent = "rb_list_box_item",
   default_font_color = constants.colors.unresearched.tbl,
   disabled_font_color = constants.colors.unresearched.tbl,
+}
+
+styles.rb_list_box_item_missing_1_research_ingredients = {
+  type = "button_style",
+  parent = "rb_list_box_item",
+  default_font_color = constants.colors.missing_1_research_ingredients.tbl,
+  disabled_font_color = constants.colors.missing_1_research_ingredients.tbl,
+}
+
+styles.rb_list_box_item_missing_0_research_ingredients = {
+  type = "button_style",
+  parent = "rb_list_box_item",
+  default_font_color = constants.colors.missing_0_research_ingredients.tbl,
+  disabled_font_color = constants.colors.missing_0_research_ingredients.tbl,
 }
 
 styles.rb_table_button = {
@@ -227,10 +241,22 @@ styles.rb_toolbar_label = {
   horizontally_squashable = "on",
 }
 
-styles.rb_unresearched_toolbar_label = {
+styles.rb_toolbar_label_unresearched = {
   type = "label_style",
   parent = "rb_toolbar_label",
   font_color = constants.colors.unresearched.tbl,
+}
+
+styles.rb_toolbar_label_missing_1_research_ingredients = {
+  type = "label_style",
+  parent = "rb_toolbar_label",
+  font_color = constants.colors.missing_1_research_ingredients.tbl,
+}
+
+styles.rb_toolbar_label_missing_0_research_ingredients = {
+  type = "label_style",
+  parent = "rb_toolbar_label",
+  font_color = constants.colors.missing_0_research_ingredients.tbl,
 }
 
 styles.rb_slot_label = {

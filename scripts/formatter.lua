@@ -48,6 +48,26 @@ local function expand_string(source, ...)
   return source
 end
 
+local function research_color_name(info)
+  if info.researched then
+    return ""
+  elseif info.research_ingredients_missing == 0 then
+    return "missing_0_research_ingredients"
+  elseif info.research_ingredients_missing == 1 then
+    return "missing_1_research_ingredients"
+  else
+    return "unresearched"
+  end
+end
+
+local function research_color_suffix(info)
+  local color_name = research_color_name(info)
+  if color_name ~= "" then
+    color_name = "_" .. color_name
+  end
+  return color_name
+end
+
 local function rich_text(key, value, inner)
   return "["
     .. key
@@ -252,6 +272,7 @@ local function get_base_tooltip(obj_data, obj_properties, player_data, options)
     obj_properties.enabled,
     obj_properties.hidden,
     obj_properties.researched,
+    obj_properties.research_ingredients_missing,
     catalyst_amount
   )
   local cached = cache[cache_key]
@@ -303,7 +324,7 @@ local function get_base_tooltip(obj_data, obj_properties, player_data, options)
   after = after .. rich_text("color", "info", gui_translations[class])
 
   if not obj_properties.researched then
-    after = after .. "  |  " .. rich_text("color", "unresearched", gui_translations.unresearched)
+    after = after .. "  |  " .. rich_text("color", research_color_name(obj_properties), gui_translations.unresearched)
   end
 
   if not obj_properties.enabled then
@@ -454,7 +475,16 @@ local function get_obj_properties(obj_data, player_data, options)
   elseif obj_data.enabled ~= nil then
     enabled = obj_data.enabled
   end
-  local obj_properties = { hidden = obj_data.hidden or false, researched = researched, enabled = enabled }
+  local research_ingredients_missing = 0
+  if obj_data.research_ingredients_missing then
+    research_ingredients_missing = obj_data.research_ingredients_missing[force.index]
+  end
+  local obj_properties = {
+    hidden = obj_data.hidden or false,
+    researched = researched,
+    enabled = enabled,
+    research_ingredients_missing = research_ingredients_missing,
+  }
 
   -- Determine if we should show this object
   local should_show = false
@@ -594,6 +624,7 @@ function formatter.format(obj_data, player_data, options)
     hidden = obj_properties.hidden,
     num_interactions = num_interactions,
     researched = obj_properties.researched,
+    research_ingredients_missing = obj_properties.research_ingredients_missing,
     tooltip = tooltip_output,
   }
 end
@@ -630,6 +661,8 @@ formatter.number = number
 formatter.object = object
 formatter.percent = percent
 formatter.per_second = per_second
+formatter.research_color_name = research_color_name
+formatter.research_color_suffix = research_color_suffix
 formatter.rich_text = rich_text
 formatter.seconds_from_ticks = seconds_from_ticks
 formatter.seconds = seconds
